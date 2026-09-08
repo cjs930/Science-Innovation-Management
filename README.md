@@ -1,7 +1,6 @@
-# Science-Innovation-Management
-1151科技與創新管理-陳正綱
+# 1151科技與創新管理 Science-Innovation-Management 陳正綱 老師 
 
-# 1151科技與創新管理 - 學期待辦事項及注意事項
+# 學期待辦事項及注意事項
 
 ## 學期待辦事項（課程任務與成績評量）
 
