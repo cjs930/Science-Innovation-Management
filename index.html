@@ -317,42 +317,85 @@
           const nested = document.createElement('ul');
           nested.className = 'nested-list';
 
-          data.forEach((item) => {
-            const li = document.createElement('li');
-            const link = document.createElement('a');
-            const isDir = item.type === 'dir';
-            link.href = isDir ? makeFileUrl(item.path) + '/' : makeFileUrl(item.path);
-            link.target = '_blank';
+          // recursive builder for lists so folders can be expanded
+          function createListFromData(items) {
+            const ul = document.createElement('ul');
+            ul.className = 'nested-list';
+            items.forEach((item) => {
+              const li = document.createElement('li');
+              const link = document.createElement('a');
+              const isDir = item.type === 'dir';
 
-            const badge = document.createElement('span');
-            let tclass = 'file';
-            if (isDir) {
-              badge.textContent = '📁';
-              tclass = 'folder';
-            } else if (/\.(pdf)$/i.test(item.name)) {
-              badge.textContent = '📄';
-              tclass = 'pdf';
-            } else if (/\.(png|jpe?g|gif|svg)$/i.test(item.name)) {
-              badge.textContent = '🖼️';
-              tclass = 'image';
-            } else if (/readme\.md$/i.test(item.name)) {
-              badge.textContent = '📄';
-              tclass = 'readme';
-            } else {
-              badge.textContent = '📄';
-            }
-            badge.className = 'badge ' + tclass;
+              if (isDir) {
+                link.href = '#';
+                link.dataset.path = item.path;
+              } else {
+                link.href = makeFileUrl(item.path);
+                link.target = '_blank';
+              }
 
-            const name = document.createElement('span');
-            name.textContent = item.name;
+              const badge = document.createElement('span');
+              let tclass = 'file';
+              if (isDir) {
+                badge.textContent = '📁';
+                tclass = 'folder';
+              } else if (/\.(pdf)$/i.test(item.name)) {
+                badge.textContent = '📄';
+                tclass = 'pdf';
+              } else if (/\.(png|jpe?g|gif|svg)$/i.test(item.name)) {
+                badge.textContent = '🖼️';
+                tclass = 'image';
+              } else if (/readme\.md$/i.test(item.name)) {
+                badge.textContent = '📄';
+                tclass = 'readme';
+              } else {
+                badge.textContent = '📄';
+              }
+              badge.className = 'badge ' + tclass;
 
-            link.appendChild(badge);
-            link.appendChild(name);
-            li.appendChild(link);
-            nested.appendChild(li);
-          });
+              const name = document.createElement('span');
+              name.textContent = item.name;
 
-          rootLi.appendChild(nested);
+              link.appendChild(badge);
+              link.appendChild(name);
+              li.appendChild(link);
+
+              if (isDir) {
+                link.addEventListener('click', async (e) => {
+                  e.preventDefault();
+                  // collapse if already expanded
+                  const existing = li.querySelector('ul.nested-list');
+                  if (existing) {
+                    existing.remove();
+                    return;
+                  }
+                  try {
+                    const apiSub = `https://api.github.com/repos/${owner}/${repo}/contents/${item.path}`;
+                    const resSub = await fetch(apiSub);
+                    if (!resSub.ok) throw new Error('GitHub API 回應 ' + resSub.status);
+                    const sub = await resSub.json();
+                    sub.sort((a, b) => {
+                      if (a.type === b.type) return a.name.localeCompare(b.name, 'zh-TW');
+                      return a.type === 'dir' ? -1 : 1;
+                    });
+                    const child = createListFromData(sub);
+                    li.appendChild(child);
+                  } catch (err) {
+                    const errDiv = document.createElement('div');
+                    errDiv.style.fontStyle = 'italic';
+                    errDiv.textContent = '無法讀取資料夾: ' + String(err);
+                    li.appendChild(errDiv);
+                  }
+                });
+              }
+
+              ul.appendChild(li);
+            });
+            return ul;
+          }
+
+          const childList = createListFromData(data);
+          rootLi.appendChild(childList);
           fileList.appendChild(rootLi);
         } catch (err) {
           document.getElementById('file-list').innerHTML = `<li><em>無法取得檔案清單 — ${escapeHtml(String(err))}</em></li>`;
