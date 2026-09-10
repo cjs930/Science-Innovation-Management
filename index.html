@@ -181,71 +181,10 @@
     </div>
 
     <script>
-      const files = [
-        { name: 'README.md', href: 'README.md', type: 'readme' },
-        { name: '2026 EMBA TIM Syllabus.pdf', href: '2026 EMBA TIM Syllabus.pdf', type: 'pdf' },
-        { name: 'Images/', href: 'Images/', type: 'folder' },
-        { name: '第一堂_學期規則說明_20260907_01.png', href: 'Images/第一堂_學期規則說明_20260907_01.png', type: 'image' }
-      ];
-
-      const fileList = document.getElementById('file-list');
-      files.forEach((file) => {
-        const li = document.createElement('li');
-        const link = document.createElement('a');
-        link.href = file.href;
-        link.target = '_blank';
-
-        const badge = document.createElement('span');
-        badge.className = `badge ${file.type}`;
-        badge.textContent = file.type === 'readme' ? 'MD' : file.type === 'pdf' ? 'PDF' : file.type === 'image' ? 'IMG' : 'DIR';
-
-        const name = document.createElement('span');
-        name.textContent = file.name;
-
-        link.appendChild(badge);
-        link.appendChild(name);
-        li.appendChild(link);
-        fileList.appendChild(li);
-      });
-
-      const readmeText = `# 1151科技與創新管理 Science-Innovation-Management 陳正綱 老師 
-
-# 學期待辦事項及注意事項
-
-## 學期待辦事項（課程任務與成績評量）
-
-*   **隨堂各組口頭報告（佔 50%）**：
-    *   不需自行尋找組員，待加退選結束後，老師會親自分組，且同組通常會混合兩個系所以上的學生。
-    *   隨著課程進展，課堂上會指派議題，小組需在課堂上討論，並製作約 3 頁的 PPT 上台報告分享看法與作法。
-*   **期末個人書面報告（佔 40%）**：
-    *   每個人都必須繳交一份個人報告，無嚴格的字數、行距或字體規定，一切依個人良心撰寫。
-    *   報告內容可二選一：
-        1.  去閱讀一本一直想讀但沒時間讀的書（如經典書籍），並撰寫讀書心得與啟發。
-        2.  分享自身工作領域中（例如資安等）與科技管理相關且值得與大家分享的知識或經驗，需寫得讓大家都能看懂。
-*   **課堂參與與作業（佔 10% 另加平時加分）**：
-    *   助教會在旁記錄學生的課堂表現（包含發言情況、是否睡覺或私下看電腦等），積極參與發言與互動者會有額外加分。
-
-## 學期注意事項
-
-*   **上課時間調整**：
-    *   雖然表定時間為 18:25，但考量大家下班通勤與用餐辛苦，老師通常會在 18:50 到 19:00 之間才開始上課。
-    *   下課時間通常會落在 21:20 到 21:30 之間。
-*   **出缺席與請假原則**：
-    *   出席是基本要求，課堂上會進行點名。
-    *   一學期的缺席（包含病假、公假、事假、出差等）最好不要超過 5 次。若有特殊健康狀況需治療，可私下告知老師個別處理。
-*   **課堂紀律與用餐**：
-    *   鼓勵大家吃飽再來上課，但不要吃太飽以免想睡。
-    *   如果因工作太累而在課堂上睡著是可以被體諒的，但基本要求是「絕對不能吵到別人」。
-*   **使用 AI 輔助的提醒**：
-    *   在思考課堂議題或寫報告時，若使用 AI（如 ChatGPT）輔助，務必要融入自己對該產業的認識與見解，不能盲目依賴，這樣產出的內容才會具備獨特價值。
-*   **針對博士班學生的特別提醒**：
-    *   老師明確表示，這門課對博士班學生的論文撰寫及畢業資格沒有直接幫助，提醒博班生需事先了解以避免期望落差。
-*   **聯絡老師的方式**：
-    *   建議透過 LINE 社群群組找到老師，標記（Tag）他並加好友，有事透過 LINE 聯絡較為即時。
-    *   Email 大約兩三天到一個禮拜才會查看一次。
-*   **未來課程行程異動預告**：
-    *   老師預計在 10 月 12 日當週帶團前往德國，隨後可能於 10 月 19 日前往立陶宛交流。
-    *   老師出國期間，可能會安排業師（東捷資訊董事長或其指派之副總級高管）來進行協同教學分享。`;
+      const owner = 'cjs930';
+      const repo = 'Science-Innovation-Management';
+      const branch = 'main';
+      const pagesBase = `https://${owner}.github.io/${repo}/`;
 
       function escapeHtml(str) {
         return str
@@ -273,12 +212,12 @@
 
         const renderListItem = (raw) => {
           const content = raw.replace(/^\s*[-*+]\s*/, '').trim();
-          return `<li>${content}</li>`;
+          return `<li>${escapeHtml(content)}</li>`;
         };
 
         const renderOrderedItem = (raw) => {
           const content = raw.replace(/^\s*\d+\.\s*/, '').trim();
-          return `<li>${content}</li>`;
+          return `<li>${escapeHtml(content)}</li>`;
         };
 
         for (let i = 0; i < lines.length; i++) {
@@ -325,7 +264,77 @@
         return html;
       }
 
-      document.getElementById('readme-container').innerHTML = renderMarkdown(readmeText);
+      function makeFileUrl(path) {
+        return pagesBase + path.split('/').map(encodeURIComponent).join('/');
+      }
+
+      async function loadRepoContents(path = '') {
+        const api = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+        try {
+          const res = await fetch(api);
+          if (!res.ok) throw new Error('GitHub API 回應 ' + res.status);
+          const data = await res.json();
+          data.sort((a, b) => {
+            if (a.type === b.type) return a.name.localeCompare(b.name, 'zh-TW');
+            return a.type === 'dir' ? -1 : 1;
+          });
+
+          const fileList = document.getElementById('file-list');
+          fileList.innerHTML = '';
+          data.forEach((item) => {
+            const li = document.createElement('li');
+            const link = document.createElement('a');
+            const isDir = item.type === 'dir';
+            link.href = isDir ? makeFileUrl(item.path) + '/' : makeFileUrl(item.path);
+            link.target = '_blank';
+
+            const badge = document.createElement('span');
+            let tclass = 'file';
+            if (isDir) {
+              badge.textContent = 'DIR';
+              tclass = 'folder';
+            } else if (/\.(pdf)$/i.test(item.name)) {
+              badge.textContent = 'PDF';
+              tclass = 'pdf';
+            } else if (/\.(png|jpe?g|gif|svg)$/i.test(item.name)) {
+              badge.textContent = 'IMG';
+              tclass = 'image';
+            } else if (/readme\.md$/i.test(item.name)) {
+              badge.textContent = 'MD';
+              tclass = 'readme';
+            } else {
+              badge.textContent = 'FILE';
+            }
+            badge.className = 'badge ' + tclass;
+
+            const name = document.createElement('span');
+            name.textContent = item.name;
+
+            link.appendChild(badge);
+            link.appendChild(name);
+            li.appendChild(link);
+            fileList.appendChild(li);
+          });
+        } catch (err) {
+          document.getElementById('file-list').innerHTML = `<li><em>無法取得檔案清單 — ${escapeHtml(String(err))}</em></li>`;
+        }
+      }
+
+      async function loadReadme() {
+        const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/README.md`;
+        try {
+          const res = await fetch(rawUrl);
+          if (!res.ok) throw new Error('無法取得 README.md');
+          const md = await res.text();
+          document.getElementById('readme-container').innerHTML = renderMarkdown(md);
+        } catch (err) {
+          document.getElementById('readme-container').innerHTML = `<p>無法載入 README.md，請至 <a href="https://github.com/${owner}/${repo}" target="_blank">GitHub 倉庫</a> 查看。</p>`;
+        }
+      }
+
+      // 初始化
+      loadRepoContents();
+      loadReadme();
     </script>
   </body>
 </html>
